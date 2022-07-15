@@ -25,15 +25,6 @@ type user struct {
 	Age   int    `json:"age"`
 }
 
-func init() {
-	flag.StringVar(&operation, "operation", "", "Console App")
-	flag.StringVar(&filename, "filename", "", "flag for file name")
-	flag.StringVar(&item, "item", "", "item from json")
-	flag.StringVar(&id, "id", "", "item id")
-
-	flag.Parse()
-}
-
 func Perform(args Arguments, writer io.Writer) error {
 
 	//Handling Errors
@@ -96,6 +87,12 @@ func parseArgs() Arguments {
 		"filename":  filename,
 		"id":        id,
 	}
+	flag.StringVar(&operation, "operation", "", "Console App")
+	flag.StringVar(&filename, "filename", "", "flag for file name")
+	flag.StringVar(&item, "item", "", "item from json")
+	flag.StringVar(&id, "id", "", "item id")
+
+	flag.Parse()
 	return args
 }
 
