@@ -34,15 +34,17 @@ func Perform(args Arguments, writer io.Writer) error {
 	}
 
 	//if file exists, if not creates a new file
-	file, err := os.OpenFile(args["filename"], os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		return err
-	}
 
 	//Logic part
 	switch args["operation"] {
 	case "list":
+		file, err := os.OpenFile(args["fileName"], os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
+		defer file.Close()
+		if err != nil {
+			return err
+		}
 		dataBytes, err := ioutil.ReadAll(file)
+		fmt.Println(string(dataBytes))
 		if err != nil {
 			return err
 		}
@@ -51,29 +53,69 @@ func Perform(args Arguments, writer io.Writer) error {
 			return err
 		}
 	case "add":
-		var users []user
+
+		//TestAddOperation
+		var u []user
 		var newUser user
-		content, err := ioutil.ReadAll(file)
+
+		file, err := os.OpenFile(args["fileName"], os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
+		defer file.Close()
+		if err != nil {
+			return err
+		}
+		//Converting json in string to struct
+		err = json.Unmarshal([]byte(args["item"]), &newUser)
 		if err != nil {
 			return err
 		}
 
-		err2 := json.Unmarshal(content, &users)
-		if err2 != nil {
+		//append newUser to slice of structs
+		u = append(u, newUser)
+
+		//convert struct {u} to json
+		data, err := json.Marshal(u)
+		if err != nil {
 			return err
 		}
-		//fmt.Println("this is struct\n", users)
 
-		itemToAdd := args["item"]
-		err = json.Unmarshal([]byte(itemToAdd), &newUser)
-		users = append(users, newUser)
-		fmt.Println(users)
-		jsonVal, err3 := json.Marshal(users)
-		if err3 != nil {
-			return err3
+		//Adding slice of json items to the file
+		file.Write(data)
+
+	case "findById":
+
+		var u []user
+		file, err := os.OpenFile(args["fileName"], os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
+		defer file.Close()
+		if err != nil {
+			return err
 		}
-		file.Write(jsonVal)
 
+		data, err := ioutil.ReadAll(file)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(data, &u)
+		if err != nil {
+			return err
+		}
+		for _, val := range u {
+			fmt.Println("struct - ", val)
+			if val.Id == args["id"] {
+				data, err := json.Marshal(val)
+				if err != nil {
+					return err
+				}
+				file.Write(data)
+			}
+		}
+		//file1, err := os.OpenFile(args["fileName"], os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
+		//defer file.Close()
+		//if err != nil {
+		//	return err
+		//}
+
+	case "remove":
+		fmt.Println("in process...")
 	}
 
 	//Logic part
@@ -84,11 +126,11 @@ func parseArgs() Arguments {
 	args := Arguments{
 		"operation": operation,
 		"item":      item,
-		"filename":  filename,
+		"fileName":  filename,
 		"id":        id,
 	}
 	flag.StringVar(&operation, "operation", "", "Console App")
-	flag.StringVar(&filename, "filename", "", "flag for file name")
+	flag.StringVar(&filename, "fileName", "", "flag for file name")
 	flag.StringVar(&item, "item", "", "item from json")
 	flag.StringVar(&id, "id", "", "item id")
 
@@ -104,24 +146,35 @@ func main() {
 }
 
 func validate(args Arguments) error {
-	if args["operation"] == "" && args["filename"] == filename && args["item"] == "" && args["id"] == "" {
+	if args["operation"] == "" && args["fileName"] == filename && args["item"] == "" && args["id"] == "" {
 		return errors.New("-operation flag has to be specified")
 	}
-	if args["operation"] == "list" && args["filename"] == "" && args["item"] == "" && args["id"] == "" {
+	if args["operation"] == "list" && args["fileName"] == "" && args["item"] == "" && args["id"] == "" {
 		return errors.New("-fileName flag has to be specified")
 	}
-	if args["operation"] == "abcd" && args["filename"] == filename && args["item"] == "" && args["id"] == "" {
+	if args["operation"] == "abcd" && args["fileName"] == filename && args["item"] == "" && args["id"] == "" {
 		return errors.New("Operation abcd not allowed!")
 	}
-	if args["operation"] == "add" && args["filename"] == filename && args["item"] == "" && args["id"] == "" {
+	if args["operation"] == "add" && args["fileName"] == "" && args["item"] == "" && args["id"] == "" {
+		return errors.New("-fileName flag has to be specified")
+	}
+	if args["operation"] == "add" && args["fileName"] == filename && args["item"] == "" && args["id"] == "" {
 		return errors.New("-item flag has to be specified")
 	}
-	if args["operation"] == "findById" && args["filename"] == filename && args["item"] == "" && args["id"] == "" {
+	if args["operation"] == "findById" && args["fileName"] == "" && args["item"] == "" && args["id"] == "" {
+		return errors.New("-fileName flag has to be specified")
+	}
+	if args["operation"] == "findById" && args["fileName"] == filename && args["item"] == "" && args["id"] == "" {
 		return errors.New("-id flag has to be specified")
 	}
-	if args["operation"] == "Remove" && args["filename"] == filename && args["item"] == "" && args["id"] == "" {
+	if args["operation"] == "remove" && args["fileName"] == "" && args["item"] == "" && args["id"] == "" {
+		return errors.New("-fileName flag has to be specified")
+	}
+	if args["operation"] == "remove" && args["fileName"] == filename && args["item"] == "" && args["id"] == "" {
 		return errors.New("-id flag has to be specified")
 	}
+	//AddSameIdError
+
 	return nil
 }
 
