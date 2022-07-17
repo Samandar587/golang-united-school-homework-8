@@ -117,8 +117,6 @@ func Perform(args Arguments, writer io.Writer) error {
 	case "remove":
 		fmt.Println("in process...")
 	}
-
-	//Logic part
 	return nil
 }
 
@@ -126,11 +124,11 @@ func parseArgs() Arguments {
 	args := Arguments{
 		"operation": operation,
 		"item":      item,
-		"fileName":  filename,
+		"filename":  filename,
 		"id":        id,
 	}
 	flag.StringVar(&operation, "operation", "", "Console App")
-	flag.StringVar(&filename, "fileName", "", "flag for file name")
+	flag.StringVar(&filename, "filename", "", "flag for file name")
 	flag.StringVar(&item, "item", "", "item from json")
 	flag.StringVar(&id, "id", "", "item id")
 
@@ -146,36 +144,43 @@ func main() {
 }
 
 func validate(args Arguments) error {
-	if args["operation"] == "" && args["fileName"] == filename && args["item"] == "" && args["id"] == "" {
+
+	var validOperations = []string{"add", "list", "findById", "remove"}
+
+	if args["operation"] == "" {
 		return errors.New("-operation flag has to be specified")
 	}
-	if args["operation"] == "list" && args["fileName"] == "" && args["item"] == "" && args["id"] == "" {
+
+	if !contains(args["operation"], validOperations) {
+		return errors.New(fmt.Sprintf("Operation %v not allowed!", args["operation"]))
+	}
+
+	if args["fileName"] == "" {
 		return errors.New("-fileName flag has to be specified")
 	}
-	if args["operation"] == "abcd" && args["fileName"] == filename && args["item"] == "" && args["id"] == "" {
-		return errors.New("Operation abcd not allowed!")
-	}
-	if args["operation"] == "add" && args["fileName"] == "" && args["item"] == "" && args["id"] == "" {
-		return errors.New("-fileName flag has to be specified")
-	}
-	if args["operation"] == "add" && args["fileName"] == filename && args["item"] == "" && args["id"] == "" {
+
+	if args["operation"] == "add" && args["item"] == "" {
 		return errors.New("-item flag has to be specified")
 	}
-	if args["operation"] == "findById" && args["fileName"] == "" && args["item"] == "" && args["id"] == "" {
-		return errors.New("-fileName flag has to be specified")
-	}
-	if args["operation"] == "findById" && args["fileName"] == filename && args["item"] == "" && args["id"] == "" {
+
+	if args["operation"] == "remove" && args["id"] == "" {
 		return errors.New("-id flag has to be specified")
 	}
-	if args["operation"] == "remove" && args["fileName"] == "" && args["item"] == "" && args["id"] == "" {
-		return errors.New("-fileName flag has to be specified")
-	}
-	if args["operation"] == "remove" && args["fileName"] == filename && args["item"] == "" && args["id"] == "" {
+
+	if args["operation"] == "findById" && args["id"] == "" {
 		return errors.New("-id flag has to be specified")
 	}
-	//AddSameIdError
 
 	return nil
+}
+
+func contains(op string, ops []string) bool {
+	for _, operation := range ops {
+		if operation == op {
+			return true
+		}
+	}
+	return false
 }
 
 //package main
